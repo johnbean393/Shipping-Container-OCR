@@ -1,8 +1,9 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
   "title": "Container Data",
-  "description": "Schema for an array of shipping container information.",
+  "description": "Schema for an array of shipping container information. When correcting data, ensure the number of containers is equal to or greater than the previous count.",
   "type": "array",
+  "minItems": 1,
   "items": {
     "type": "object",
     "title": "Container",

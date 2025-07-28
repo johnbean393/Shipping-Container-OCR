@@ -8,6 +8,8 @@ A Python script that extracts shipping container information from images using O
 - **Multiple AI Models**: Support for various vision-capable AI models through OpenRouter
 - **Structured Output**: Returns container information in structured JSON format
 - **Comprehensive Data Extraction**: Captures container IDs, carriers, dimensions, weight specifications, and more
+- **Container ID Validation**: Automatic validation of container IDs using industry-standard check digit algorithms
+- **Intelligent Correction**: Iterative correction of invalid container IDs using AI with conversation context
 - **Image Validation**: Built-in image format validation and error handling
 - **Flexible Output**: Save results to custom JSON files
 
@@ -25,6 +27,42 @@ The script extracts the following information from container images:
   - NET (Payload capacity)
 - **Cubic Capacity**: Volume in cubic meters and cubic feet
 - **Additional Markings**: Any other visible markings or codes
+
+## Container ID Validation & Correction
+
+The script includes advanced container ID validation and correction capabilities:
+
+### Automatic Validation
+- **Check Digit Verification**: Validates container IDs using ISO 6346 standard check digit algorithms
+- **Format Validation**: Ensures container IDs follow the correct 4-letter + 7-digit format
+- **Real-time Detection**: Identifies invalid container IDs immediately after extraction
+
+### Intelligent Correction Process
+- **Iterative Correction**: Automatically attempts to correct invalid container IDs using AI
+- **Context Preservation**: Maintains full conversation history for accurate corrections
+- **Container Count Protection**: Ensures corrections don't reduce the number of detected containers
+- **Configurable Attempts**: Set maximum correction iterations (default: 3 attempts)
+
+### How It Works
+1. **Initial Extraction**: OCR processes the image and extracts container data
+2. **Validation Check**: Each container ID is validated against industry standards
+3. **Correction Loop**: If invalid IDs are found, the AI is prompted to correct them using:
+   - Full conversation context from previous attempts
+   - List of specific invalid container IDs
+   - Requirement to maintain or increase container count
+4. **Success or Timeout**: Process continues until all IDs are valid or max iterations reached
+
+### Usage Examples
+```bash
+# Use default 3 correction attempts
+python container-ocr.py image.jpg
+
+# Allow up to 5 correction attempts for challenging images
+python container-ocr.py image.jpg --max-iterations 5
+
+# Disable corrections (single attempt only)
+python container-ocr.py image.jpg --max-iterations 1
+```
 
 ## Installation
 
@@ -83,6 +121,7 @@ python container-ocr.py image.jpg --output custom_output.json --api-key your_key
 - `--output`, `-o`: Output JSON file path (default: `container_data.json`)
 - `--model`: AI model to use for OCR (default: `google/gemini-2.5-flash`)
 - `--api-key`: OpenRouter API key (alternative to environment variable)
+- `--max-iterations`: Maximum number of validation correction attempts (default: `3`)
 
 ## AI Models
 

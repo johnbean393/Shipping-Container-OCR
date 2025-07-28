@@ -7,10 +7,11 @@ Extracts shipping container information from images and returns structured JSON.
 import argparse
 import sys
 import os
+import json
 
 from container_ocr import ContainerOCR
 from utils import save_results
-from config import DEFAULT_MODEL, DEFAULT_OUTPUT_FILE
+from config import DEFAULT_MODEL, DEFAULT_OUTPUT_FILE, DEFAULT_MAX_ITERATIONS
 
 
 def main():
@@ -39,6 +40,13 @@ def main():
         help="OpenRouter API key (or set OPENROUTER_API_KEY environment variable)"
     )
     
+    parser.add_argument(
+        "--max-iterations",
+        type=int,
+        default=DEFAULT_MAX_ITERATIONS,
+        help=f"Maximum number of correction iterations (default: {DEFAULT_MAX_ITERATIONS})"
+    )
+    
     args = parser.parse_args()
     
     # Get API key
@@ -50,26 +58,17 @@ def main():
     try:
         # Initialize OCR
         ocr = ContainerOCR(args.model, api_key)
-        
         # Extract data
         print(f"Processing image: {args.image_path}")
-        container_data = ocr.extract_container_data(args.image_path)
-        
+        container_data = ocr.extract_container_data(args.image_path, max_iterations=args.max_iterations)
         # Save results
         save_results(container_data, args.output)
-        
         # Print summary
         container_count = len(container_data) if isinstance(container_data, list) else 0
         print(f"Successfully extracted data for {container_count} containers")
-        
         # Print brief summary
         if container_count > 0:
-            print("\nContainers:")
-            for i, container in enumerate(container_data, 1):  # Show all containers
-                container_id = container.get('container_id', 'Unknown')
-                carrier = container.get('carrier', 'Unknown')
-                print(f"  {i}. {container_id} ({carrier})")
-    
+            print(json.dumps(container_data, indent=2))
     except Exception as e:
         print(f"Error: {e}")
         sys.exit(1)

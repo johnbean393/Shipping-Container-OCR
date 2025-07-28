@@ -12,7 +12,10 @@ DEFAULT_OUTPUT_FILE = "container_data.json"
 
 # API limits
 MAX_TOKENS = 64000
-TEMPERATURE = 0.0
+TEMPERATURE = 1.0
+
+# Validation and correction settings
+DEFAULT_MAX_ITERATIONS = 3
 
 # Container ID validation
 CONTAINER_ID_LENGTH = 11
