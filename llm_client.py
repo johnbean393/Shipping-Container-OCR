@@ -100,14 +100,11 @@ class LLMClient:
         Raises:
             Exception: If the API call fails
         """
-        invalid_ids = [container.get('container_id', 'Unknown') for container in invalid_containers]
         
-        correction_prompt = f"""Based on our previous conversation, I need you to correct the container IDs that failed validation.
+        correction_prompt = f"""Please correct the incorrect container IDs.
 
 Containers with invalid IDs found:
 {json.dumps(invalid_containers, indent=2)}
-
-Invalid container IDs: {', '.join(invalid_ids)}
 
 Please provide the COMPLETE JSON response again with the following corrections:
 
