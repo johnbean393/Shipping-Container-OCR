@@ -5,10 +5,10 @@ Container OCR class for extracting shipping container information from images.
 import json
 from typing import Dict, Any
 
-from config import SCHEMA_FILE
-from utils import encode_image, validate_image, load_schema
-from container_validator import validate_container_id, clean_container_id
-from llm_client import LLMClient
+from .config import SCHEMA_FILE
+from .utils import encode_image, validate_image, load_schema
+from .container_validator import validate_container_id, clean_container_id
+from .llm_client import LLMClient
 
 
 class ContainerOCR:
@@ -24,26 +24,24 @@ class ContainerOCR:
 
     def create_prompt(self) -> str:
         """Create the prompt for container OCR."""
-        return f"""Extract all the text from each container in the image.
+        return f"""Extract only the container IDs from each container in the image.
 
-Output the information on each container as a structured JSON object according to the schema below.
+Output the information as a structured JSON array according to the schema below.
 
 ```json
 {json.dumps(self.schema, indent=2)}
 ```
 
-Focus on:
-1. Container IDs (e.g., CMCU 455 7748)
-2. Carrier names (e.g., CROWLEY)
-3. Container types (e.g., LPG1)
-4. Dimensions (length and height)
-5. Weight specifications (M.G.W, TARE, NET)
-6. Cubic capacity (CUB.CAP)
-7. Any additional markings
+Focus ONLY on:
+1. Container IDs (e.g., CMCU4557748, SEKU9206534)
+
+Look for alphanumeric codes that follow the standard shipping container ID format:
+- 4 letters (owner code) followed by 7 digits
+- Examples: CMCU4557748, SEKU9206534, TEMU1234567
 
 The JSON array should be in the same order as the containers in the image –– left to right, top to bottom.
 
-Return only the JSON array, no additional text or formatting."""
+Return only the JSON array with container IDs, no additional text or formatting."""
 
     def extract_container_data(self, image_path: str, max_iterations: int = 3) -> Dict[str, Any]:
         """Extract container data from image using LLM with validation and correction loop."""

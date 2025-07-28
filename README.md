@@ -1,32 +1,44 @@
 # Container OCR
 
-A Python script that extracts shipping container information from images using OCR technology powered by AI models via OpenRouter API.
+A Python script that extracts shipping container IDs from images using OCR technology powered by AI models via OpenRouter API.
 
 ## Features
 
-- **Automated OCR**: Extract text and data from shipping container images
+- **Automated OCR**: Extract container IDs from shipping container images
 - **Multiple AI Models**: Support for various vision-capable AI models through OpenRouter
-- **Structured Output**: Returns container information in structured JSON format
-- **Comprehensive Data Extraction**: Captures container IDs, carriers, dimensions, weight specifications, and more
+- **Structured Output**: Returns container IDs in structured JSON format
+- **Container ID Focus**: Specifically designed to extract only container identification numbers
 - **Container ID Validation**: Automatic validation of container IDs using industry-standard check digit algorithms
 - **Intelligent Correction**: Iterative correction of invalid container IDs using AI with conversation context
 - **Image Validation**: Built-in image format validation and error handling
-- **Flexible Output**: Save results to custom JSON files
+- **Organized Output**: Saves results to the `output/` directory with automatic timestamping
 
 ## What Data is Extracted
 
-The script extracts the following information from container images:
+The script extracts only the **Container IDs** from container images:
 
-- **Container ID**: Unique identifiers (e.g., "CMCU 455 7748")
-- **Carrier**: Shipping company name (e.g., "CROWLEY")
-- **Container Type**: Type classification (e.g., "LPG1", "Reefer")
-- **Dimensions**: Length and height measurements
-- **Weight Specifications**:
-  - M.G.W (Maximum Gross Weight)
-  - TARE (Empty weight)
-  - NET (Payload capacity)
-- **Cubic Capacity**: Volume in cubic meters and cubic feet
-- **Additional Markings**: Any other visible markings or codes
+- **Container ID**: Unique identifiers (e.g., "CMCU4557748", "SEKU9206534")
+  - 4 letters (owner code) + 7 digits
+  - Follows ISO 6346 standard format
+  - Includes automatic check digit validation
+
+## Project Structure
+
+```
+Container OCR/
+├── src/                    # Source code directory
+│   ├── __init__.py
+│   ├── container_ocr.py    # Main OCR logic
+│   ├── container_validator.py  # Container ID validation
+│   ├── llm_client.py      # OpenRouter API client
+│   ├── utils.py           # Utility functions
+│   ├── config.py          # Configuration settings
+│   └── schema.json        # JSON schema for container IDs
+├── output/                 # Output directory for JSON files
+├── main.py                # Main entry point
+├── requirements.txt       # Python dependencies
+└── README.md
+```
 
 ## Container ID Validation & Correction
 
@@ -55,13 +67,13 @@ The script includes advanced container ID validation and correction capabilities
 ### Usage Examples
 ```bash
 # Use default 3 correction attempts
-python container_ocr.py image.jpg
+python main.py image.jpg
 
 # Allow up to 5 correction attempts for challenging images
-python container_ocr.py image.jpg --max-iterations 5
+python main.py image.jpg --max-iterations 5
 
 # Disable corrections (single attempt only)
-python container_ocr.py image.jpg --max-iterations 1
+python main.py image.jpg --max-iterations 1
 ```
 
 ## Installation
@@ -93,7 +105,7 @@ python container_ocr.py image.jpg --max-iterations 1
      ```
    - **Command line argument**:
      ```bash
-     python container_ocr.py image.jpg --api-key your_api_key_here
+     python main.py image.jpg --api-key your_api_key_here
      ```
 
 ## Usage
@@ -101,24 +113,31 @@ python container_ocr.py image.jpg --max-iterations 1
 ### Basic Usage
 
 ```bash
-python container_ocr.py path/to/container/image.jpg
+python main.py path/to/container/image.jpg
 ```
 
 This will:
 - Process the image
-- Extract container data
-- Save results to `container_data.json`
+- Extract container IDs
+- Save results to `output/container_data_YYYYMMDD_HHMMSS.json` (with timestamp)
 
 ### Advanced Usage
 
 ```bash
-python container_ocr.py image.jpg --output custom_output.json --api-key your_key
+python main.py image.jpg --output output/custom_output.json --api-key your_key
 ```
+
+### Output File Naming
+
+- **Default**: `output/container_data_20241216_143022.json` (includes timestamp)
+- **Custom**: Any path you specify with `--output` or `-o`
+
+The timestamp format is `YYYYMMDD_HHMMSS` to ensure files are sorted chronologically and prevent overwrites.
 
 ### Command Line Options
 
 - `image_path`: Path to the container image file (required)
-- `--output`, `-o`: Output JSON file path (default: `container_data.json`)
+- `--output`, `-o`: Output JSON file path (default: `output/container_data_{timestamp}.json`)
 - `--model`: AI model to use for OCR (default: `google/gemini-2.5-flash`)
 - `--api-key`: OpenRouter API key (alternative to environment variable)
 - `--max-iterations`: Maximum number of validation correction attempts (default: `3`)
@@ -132,7 +151,7 @@ This application supports various AI models through the OpenRouter API. Differen
 You can specify which model to use with the `--model` parameter:
 
 ```bash
-python container_ocr.py image.jpg --model google/gemini-2.5-flash
+python main.py image.jpg --model google/gemini-2.5-flash
 ```
 
 ### Recommended Models
@@ -154,12 +173,12 @@ python container_ocr.py image.jpg --model google/gemini-2.5-flash
 
 **For General Use:**
 ```bash
-python container_ocr.py image.jpg --model google/gemini-2.5-flash
+python main.py image.jpg --model google/gemini-2.5-flash
 ```
 
 **For High Accuracy (complex/poor quality images):**
 ```bash
-python container_ocr.py image.jpg --model google/gemini-2.5-pro
+python main.py image.jpg --model google/gemini-2.5-pro
 ```
 
 ## Example Output

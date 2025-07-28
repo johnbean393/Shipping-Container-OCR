@@ -6,8 +6,8 @@ import json
 from typing import Dict, Any
 
 from openai import OpenAI
-from config import OPENROUTER_BASE_URL, MAX_TOKENS, TEMPERATURE
-from utils import clean_response_content
+from .config import OPENROUTER_BASE_URL, MAX_TOKENS, TEMPERATURE
+from .utils import clean_response_content
 
 
 class LLMClient:

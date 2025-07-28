@@ -7,8 +7,8 @@ DEFAULT_MODEL = "google/gemini-2.5-flash"
 OPENROUTER_BASE_URL = "https://openrouter.ai/api/v1"
 
 # File paths
-SCHEMA_FILE = "schema.json"
-DEFAULT_OUTPUT_FILE = "container_data.json"
+SCHEMA_FILE = "src/schema.json"
+DEFAULT_OUTPUT_FILE = "output/container_data_{timestamp}.json"
 
 # API limits
 MAX_TOKENS = 64000
