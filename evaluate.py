@@ -201,9 +201,7 @@ def run_tests_parallel(models: List[str], test_cases: List[str], api_key: str, m
 def print_summary(results: List[Dict], models: List[str], test_cases: List[str]):
     """Print a comprehensive summary of test results."""
     
-    print("\n" + "="*80)
-    print("TEST RESULTS SUMMARY")
-    print("="*80)
+    print("Results:")
     
     # Overall statistics
     total_tests = len(results)
@@ -217,7 +215,7 @@ def print_summary(results: List[Dict], models: List[str], test_cases: List[str])
     
     # Per-model summary
     print("\n" + "-"*60)
-    print("PER-MODEL SUMMARY")
+    print("Per-model summary:")
     print("-"*60)
     
     for model in models:
