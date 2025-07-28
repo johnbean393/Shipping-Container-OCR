@@ -1,0 +1,149 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Container Data",
+  "description": "Schema for an array of shipping container information.",
+  "type": "array",
+  "items": {
+    "type": "object",
+    "title": "Container",
+    "description": "Details about a single shipping container.",
+    "required": [
+      "container_id",
+      "carrier",
+      "type",
+      "dimensions",
+      "marked_details",
+      "weight_capacity"
+    ],
+    "properties": {
+      "container_id": {
+        "type": "string",
+        "description": "Unique identifier for the container, e.g., 'CMCU 455 7748' or 'SEKU 920653 4'."
+      },
+      "carrier": {
+        "type": "string",
+        "description": "The name of the shipping carrier.",
+        "enum": [
+          "CROWLEY",
+          "Unknown"
+        ]
+      },
+      "type": {
+        "type": "string",
+        "description": "The type of container, e.g., 'LPG1' or 'Reefer (45R1)'."
+      },
+      "dimensions": {
+        "type": "object",
+        "description": "Physical dimensions of the container.",
+        "required": [
+          "length",
+          "height"
+        ],
+        "properties": {
+          "length": {
+            "type": "string",
+            "description": "Length of the container, e.g., '45''."
+          },
+          "height": {
+            "type": "string",
+            "description": "Height of the container, e.g., '102\"' or 'Unknown'."
+          }
+        },
+        "additionalProperties": false
+      },
+      "marked_details": {
+        "type": "object",
+        "description": "Additional details marked on the container, which can vary.",
+        "patternProperties": {
+          "^(location|code|identifier|additional_mark|additional_info_\\d+)$": {
+            "type": "string"
+          }
+        },
+        "additionalProperties": false
+      },
+      "weight_capacity": {
+        "type": "object",
+        "description": "Detailed weight and volume capacities of the container.",
+        "properties": {
+          "M.G.W": {
+            "type": "object",
+            "description": "Maximum Gross Weight.",
+            "required": [
+              "kgs",
+              "lbs"
+            ],
+            "properties": {
+              "kgs": {
+                "type": "string",
+                "description": "Maximum Gross Weight in kilograms."
+              },
+              "lbs": {
+                "type": "string",
+                "description": "Maximum Gross Weight in pounds."
+              }
+            },
+            "additionalProperties": false
+          },
+          "TARE": {
+            "type": "object",
+            "description": "Tare Weight (empty weight).",
+            "required": [
+              "kgs",
+              "lbs"
+            ],
+            "properties": {
+              "kgs": {
+                "type": "string",
+                "description": "Tare Weight in kilograms."
+              },
+              "lbs": {
+                "type": "string",
+                "description": "Tare Weight in pounds."
+              }
+            },
+            "additionalProperties": false
+          },
+          "NET": {
+            "type": "object",
+            "description": "Net Weight (payload capacity).",
+            "required": [
+              "kgs",
+              "lbs"
+            ],
+            "properties": {
+              "kgs": {
+                "type": "string",
+                "description": "Net Weight in kilograms."
+              },
+              "lbs": {
+                "type": "string",
+                "description": "Net Weight in pounds."
+              }
+            },
+            "additionalProperties": false
+          },
+          "CUB.CAP": {
+            "type": "object",
+            "description": "Cubic Capacity.",
+            "required": [
+              "cum",
+              "cuft"
+            ],
+            "properties": {
+              "cum": {
+                "type": "string",
+                "description": "Cubic Capacity in cubic meters."
+              },
+              "cuft": {
+                "type": "string",
+                "description": "Cubic Capacity in cubic feet."
+              }
+            },
+            "additionalProperties": false
+          }
+        },
+        "additionalProperties": false
+      }
+    }
+  }
+} 
