@@ -3,6 +3,7 @@ LLM Client for handling OpenAI/OpenRouter API interactions.
 """
 
 import json
+import time
 from typing import Dict, Any
 
 from openai import OpenAI
@@ -21,6 +22,47 @@ class LLMClient:
         )
         self.model = model
 
+    def _make_api_call_with_retry(self, messages: list, max_retries: int = 3) -> str:
+        """
+        Make an API call with retry logic and exponential backoff.
+        
+        Args:
+            messages: List of messages for the API call
+            max_retries: Maximum number of retry attempts (default: 3)
+            
+        Returns:
+            The cleaned response content from the LLM
+            
+        Raises:
+            Exception: If all retry attempts fail
+        """
+        last_exception = None
+        
+        for attempt in range(max_retries):
+            try:
+                response = self.client.chat.completions.create(
+                    model=self.model,
+                    messages=messages,
+                    max_tokens=MAX_TOKENS,
+                    temperature=TEMPERATURE
+                )
+                
+                # Extract and clean response
+                content = response.choices[0].message.content
+                return clean_response_content(content)
+                
+            except Exception as e:
+                last_exception = e
+                if attempt < max_retries - 1:  # Don't sleep on the last attempt
+                    wait_time = 2 ** attempt  # Exponential backoff: 1s, 2s, 4s
+                    print(f"LLM API call attempt {attempt + 1} failed: {e}. Retrying in {wait_time}s...")
+                    time.sleep(wait_time)
+                else:
+                    print(f"LLM API call attempt {attempt + 1} failed: {e}. No more retries.")
+        
+        # All retries failed
+        raise Exception(f"LLM API call failed after {max_retries} attempts. Last error: {last_exception}")
+
     def extract_text_from_image(self, prompt: str, base64_image: str) -> str:
         """
         Extract text from image using the LLM.
@@ -33,38 +75,27 @@ class LLMClient:
             The LLM's response content
             
         Raises:
-            Exception: If the API call fails
+            Exception: If the API call fails after all retries
         """
-        try:
-            response = self.client.chat.completions.create(
-                model=self.model,
-                messages=[
+        messages = [
+            {
+                "role": "user",
+                "content": [
                     {
-                        "role": "user",
-                        "content": [
-                            {
-                                "type": "text",
-                                "text": prompt
-                            },
-                            {
-                                "type": "image_url",
-                                "image_url": {
-                                    "url": f"data:image/jpeg;base64,{base64_image}"
-                                }
-                            }
-                        ]
+                        "type": "text",
+                        "text": prompt
+                    },
+                    {
+                        "type": "image_url",
+                        "image_url": {
+                            "url": f"data:image/jpeg;base64,{base64_image}"
+                        }
                     }
-                ],
-                max_tokens=MAX_TOKENS,
-                temperature=TEMPERATURE
-            )
-            
-            # Extract and clean response
-            content = response.choices[0].message.content
-            return clean_response_content(content)
-            
-        except Exception as e:
-            raise Exception(f"LLM API call failed: {e}")
+                ]
+            }
+        ]
+        
+        return self._make_api_call_with_retry(messages)
 
     def parse_json_response(self, content: str) -> Dict[str, Any]:
         """
@@ -98,7 +129,7 @@ class LLMClient:
             The LLM's corrected response content
             
         Raises:
-            Exception: If the API call fails
+            Exception: If the API call fails after all retries
         """
         
         # Extract just the invalid container IDs for clearer messaging
@@ -124,22 +155,11 @@ Please provide the COMPLETE JSON response with ONLY the invalid IDs corrected.
 
 Return only the corrected JSON array with all containers, maintaining the same order as before."""
 
-        try:
-            # Build messages including chat history
-            messages = chat_history.copy()
-            messages.append({
-                "role": "user",
-                "content": correction_prompt
-            })
-            response = self.client.chat.completions.create(
-                model=self.model,
-                messages=messages,
-                max_tokens=MAX_TOKENS,
-                temperature=TEMPERATURE
-            )
-            # Extract and clean response
-            content = response.choices[0].message.content
-            return clean_response_content(content)
-            
-        except Exception as e:
-            raise Exception(f"LLM correction API call failed: {e}") 
+        # Build messages including chat history
+        messages = chat_history.copy()
+        messages.append({
+            "role": "user",
+            "content": correction_prompt
+        })
+        
+        return self._make_api_call_with_retry(messages) 
