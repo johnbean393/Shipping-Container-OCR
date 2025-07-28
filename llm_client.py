@@ -111,7 +111,7 @@ The following {len(invalid_ids)} container IDs are INVALID and need correction:
 
 Requirements for correction:
 1. Look at the image again and ONLY fix the invalid container IDs listed above
-2. Keep ALL other container IDs exactly as they were in your previous response
+2. Keep ALL other valid container IDs exactly as they were in your previous response
 3. Maintain the exact same number of containers ({original_count}) and the same order
 4. Only change the invalid container IDs to match what you actually see in the image
 5. Use proper container ID format: 4 letters + 7 digits with valid check digit

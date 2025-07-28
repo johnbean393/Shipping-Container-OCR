@@ -68,7 +68,10 @@ def main():
         print(f"Successfully extracted data for {container_count} containers")
         # Print brief summary
         if container_count > 0:
-            print(json.dumps(container_data, indent=2))
+            # Print container IDs
+            print("\nContainer IDs:")
+            for container in container_data:
+                print(container.get('container_id', 'Unknown'))
     except Exception as e:
         print(f"Error: {e}")
         sys.exit(1)

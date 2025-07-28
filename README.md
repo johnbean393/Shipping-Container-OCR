@@ -55,13 +55,13 @@ The script includes advanced container ID validation and correction capabilities
 ### Usage Examples
 ```bash
 # Use default 3 correction attempts
-python container-ocr.py image.jpg
+python container_ocr.py image.jpg
 
 # Allow up to 5 correction attempts for challenging images
-python container-ocr.py image.jpg --max-iterations 5
+python container_ocr.py image.jpg --max-iterations 5
 
 # Disable corrections (single attempt only)
-python container-ocr.py image.jpg --max-iterations 1
+python container_ocr.py image.jpg --max-iterations 1
 ```
 
 ## Installation
@@ -93,7 +93,7 @@ python container-ocr.py image.jpg --max-iterations 1
      ```
    - **Command line argument**:
      ```bash
-     python container-ocr.py image.jpg --api-key your_api_key_here
+     python container_ocr.py image.jpg --api-key your_api_key_here
      ```
 
 ## Usage
@@ -101,7 +101,7 @@ python container-ocr.py image.jpg --max-iterations 1
 ### Basic Usage
 
 ```bash
-python container-ocr.py path/to/container/image.jpg
+python container_ocr.py path/to/container/image.jpg
 ```
 
 This will:
@@ -112,7 +112,7 @@ This will:
 ### Advanced Usage
 
 ```bash
-python container-ocr.py image.jpg --output custom_output.json --api-key your_key
+python container_ocr.py image.jpg --output custom_output.json --api-key your_key
 ```
 
 ### Command Line Options
@@ -132,7 +132,7 @@ This application supports various AI models through the OpenRouter API. Differen
 You can specify which model to use with the `--model` parameter:
 
 ```bash
-python container-ocr.py image.jpg --model google/gemini-2.5-flash
+python container_ocr.py image.jpg --model google/gemini-2.5-flash
 ```
 
 ### Recommended Models
@@ -154,12 +154,12 @@ python container-ocr.py image.jpg --model google/gemini-2.5-flash
 
 **For General Use:**
 ```bash
-python container-ocr.py image.jpg --model google/gemini-2.5-flash
+python container_ocr.py image.jpg --model google/gemini-2.5-flash
 ```
 
 **For High Accuracy (complex/poor quality images):**
 ```bash
-python container-ocr.py image.jpg --model google/gemini-2.5-pro
+python container_ocr.py image.jpg --model google/gemini-2.5-pro
 ```
 
 ## Example Output
