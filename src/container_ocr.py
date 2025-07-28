@@ -18,7 +18,6 @@ class ContainerOCR:
         """Initialize the OCR client with OpenRouter API key."""
         # Initialize the LLM client
         self.llm_client = LLMClient(model, api_key)
-
         # Load the schema from external file
         self.schema = load_schema(SCHEMA_FILE)
 

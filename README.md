@@ -34,8 +34,12 @@ Container OCR/
 │   ├── utils.py           # Utility functions
 │   ├── config.py          # Configuration settings
 │   └── schema.json        # JSON schema for container IDs
+├── test_data/              # Test dataset
+│   ├── images/            # Test container images
+│   └── answers/           # Expected results for evaluation
 ├── output/                 # Output directory for JSON files
 ├── main.py                # Main entry point
+├── evaluate.py            # Model evaluation script
 ├── requirements.txt       # Python dependencies
 └── README.md
 ```
@@ -238,6 +242,136 @@ The script includes comprehensive error handling for:
 - Requires internet connection for API access
 - Processing time depends on image size and complexity
 - API usage is subject to OpenRouter rate limits and pricing
+
+## Model Evaluation
+
+The project includes a comprehensive evaluation system to test and compare multiple models on a standardized test dataset.
+
+### Evaluation Script: `evaluate.py`
+
+The evaluation script allows you to:
+- **Test Multiple Models**: Compare different AI models side-by-side
+- **Parallel Execution**: Run all tests concurrently for maximum efficiency
+- **Comprehensive Metrics**: Get detailed performance analysis
+- **Automated Validation**: Compare results against ground truth data
+
+### Test Dataset
+
+The `test_data/` directory contains:
+- **4 Test Images**: `container_0.jpeg` through `container_3.jpeg`
+- **Ground Truth Answers**: Expected container IDs for each image
+- **Standardized Format**: Consistent evaluation across all models
+
+### Usage Examples
+
+#### Test a Single Model
+```bash
+python evaluate.py --models "google/gemini-2.5-flash"
+```
+
+#### Compare Multiple Models
+```bash
+python evaluate.py --models "google/gemini-2.5-flash;anthropic/claude-3-haiku;openai/gpt-4o-mini"
+```
+
+#### Test Specific Cases
+```bash
+python evaluate.py --models "google/gemini-2.5-flash" --test-cases "container_0;container_1"
+```
+
+#### Customize Performance Settings
+```bash
+python evaluate.py --models "google/gemini-2.5-flash" --max-workers 8 --max-iterations 5
+```
+
+### Command Line Options
+
+- `--models`: **Required** - Semicolon-separated list of model IDs to test
+- `--test-cases`: Test cases to run (default: all available)
+- `--api-key`: OpenRouter API key (or use `OPENROUTER_API_KEY` environment variable)
+- `--max-iterations`: Maximum correction iterations per test (default: 3)
+- `--max-workers`: Number of parallel workers (default: 4)
+- `--output`: Output file for detailed results (default: `output/test_results_{timestamp}.json`)
+
+### Evaluation Metrics
+
+The evaluation provides comprehensive performance metrics:
+
+#### **Precision**: How many predicted container IDs were correct
+- `Precision = True Positives / (True Positives + False Positives)`
+
+#### **Recall**: How many actual container IDs were found
+- `Recall = True Positives / (True Positives + False Negatives)`
+
+#### **F1-Score**: Harmonic mean of precision and recall
+- `F1 = 2 × (Precision × Recall) / (Precision + Recall)`
+
+#### **Execution Time**: Processing time for each test case
+
+### Sample Output
+
+```
+Testing 3 models on 4 test cases
+Models: google/gemini-2.5-flash, anthropic/claude-3-haiku, openai/gpt-4o-mini
+Test cases: container_0, container_1, container_2, container_3
+
+Running 12 tests in parallel (max 4 workers)...
+✅ google/gemini-2.5-flash on container_0: F1=1.000 (12.3s)
+✅ anthropic/claude-3-haiku on container_1: F1=0.950 (8.7s)
+✅ openai/gpt-4o-mini on container_2: F1=0.889 (15.2s)
+...
+
+================================================================================
+TEST RESULTS SUMMARY
+================================================================================
+Total tests: 12
+Successful: 11
+Failed: 1
+Success rate: 91.7%
+
+------------------------------------------------------------
+PER-MODEL SUMMARY
+------------------------------------------------------------
+
+google/gemini-2.5-flash:
+  Average F1 Score: 0.975
+  Average Precision: 0.980
+  Average Recall: 0.971
+  Average Execution Time: 11.2s
+  Successful Tests: 4/4
+
+anthropic/claude-3-haiku:
+  Average F1 Score: 0.923
+  Average Precision: 0.935
+  Average Recall: 0.912
+  Average Execution Time: 9.8s
+  Successful Tests: 4/4
+...
+```
+
+### Detailed Results
+
+All evaluation results are automatically saved to timestamped JSON files in the `output/` directory, containing:
+- Individual test results and metrics
+- Detailed ID-level analysis (missing/extra container IDs)
+- Execution times and error details
+- Complete evaluation metadata
+
+### Parallel Processing
+
+The evaluation system runs tests in parallel by default:
+- **Multiple Models**: All model+test_case combinations run simultaneously
+- **Configurable Workers**: Adjust `--max-workers` based on your system and API limits
+- **Real-time Progress**: Live updates as tests complete
+- **Error Resilience**: Failed tests don't block other tests
+
+### Best Practices
+
+1. **Start Small**: Test with one model first to verify setup
+2. **Manage API Limits**: Use `--max-workers` to control concurrent API calls
+3. **Save Results**: Always review the detailed JSON output files
+4. **Compare Systematically**: Use consistent `--max-iterations` across model comparisons
+5. **Monitor Performance**: Track both accuracy and execution time
 
 ## Contributing
 

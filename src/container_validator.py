@@ -3,7 +3,7 @@ Container ID validation utilities.
 """
 
 import re
-from .config import CONTAINER_ID_LENGTH, CONTAINER_ID_PATTERN, LETTER_VALUES
+from src.config import CONTAINER_ID_LENGTH, CONTAINER_ID_PATTERN, LETTER_VALUES
 
 
 def validate_container_id(container_id: str) -> bool:
