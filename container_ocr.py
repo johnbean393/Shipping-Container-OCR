@@ -78,6 +78,7 @@ Return only the JSON array, no additional text or formatting."""
             
             result = None
             iteration = 0
+            previous_valid_ids = {}  # Track previously valid container IDs by index
             
             while iteration < max_iterations:
                 try:
@@ -127,6 +128,16 @@ Return only the JSON array, no additional text or formatting."""
                         if container_id != 'Unknown' and not validate_container_id(container_id):
                             invalid_containers.append(container)
                             validation_errors.append(f"Invalid container ID: {container_id} at index {index}")
+                        elif container_id != 'Unknown' and validate_container_id(container_id):
+                            # Track valid container IDs
+                            if iteration == 0:
+                                previous_valid_ids[index] = container_id
+                            elif index in previous_valid_ids and previous_valid_ids[index] != container_id:
+                                # Model incorrectly changed a previously valid ID
+                                validation_errors.append(f"Model incorrectly changed valid container ID from {previous_valid_ids[index]} to {container_id} at index {index}")
+                            else:
+                                # Update or add new valid ID
+                                previous_valid_ids[index] = container_id
                     
                     # Check if container count decreased
                     current_count = len(result) if isinstance(result, list) else 0

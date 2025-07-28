@@ -101,25 +101,29 @@ class LLMClient:
             Exception: If the API call fails
         """
         
-        correction_prompt = f"""Please correct the incorrect container IDs.
+        # Extract just the invalid container IDs for clearer messaging
+        invalid_ids = [container.get('container_id', 'Unknown') for container in invalid_containers]
+        
+        correction_prompt = f"""IMPORTANT: Only correct the INVALID container IDs listed below. Do NOT change any container IDs that are already correct.
 
-Containers with invalid IDs found:
-{json.dumps(invalid_containers, indent=2)}
+The following {len(invalid_ids)} container IDs are INVALID and need correction:
+{', '.join(invalid_ids)}
 
-Please provide the COMPLETE JSON response again with the following corrections:
+Requirements for correction:
+1. Look at the image again and ONLY fix the invalid container IDs listed above
+2. Keep ALL other container IDs exactly as they were in your previous response
+3. Maintain the exact same number of containers ({original_count}) and the same order
+4. Only change the invalid container IDs to match what you actually see in the image
+5. Use proper container ID format: 4 letters + 7 digits with valid check digit
 
-1. Examine the image closely and fix any invalid container IDs using proper container ID format (4 letters + 7 digits with valid check digit)
-2. Ensure you output at least {original_count} containers (same or more than before)
-3. Keep all other data exactly the same, only fix the invalid container IDs
-4. Use the following schema:
+Container ID format rules:
+- 4 letters (owner code) + 7 digits 
+- The 7th digit is a check digit calculated from the first 10 characters
+- Example: ABCD1234567 (where 7 is the check digit)
 
-```json
-{json.dumps(schema, indent=2)}
-```
+Please provide the COMPLETE JSON response with ONLY the invalid IDs corrected.
 
-Keep the JSON array in the same order as the containers in the image –– left to right, top to bottom.
-
-Return only the corrected JSON array with all containers, with no additional text or formatting."""
+Return only the corrected JSON array with all containers, maintaining the same order as before."""
 
         try:
             # Build messages including chat history
@@ -128,14 +132,12 @@ Return only the corrected JSON array with all containers, with no additional tex
                 "role": "user",
                 "content": correction_prompt
             })
-            
             response = self.client.chat.completions.create(
                 model=self.model,
                 messages=messages,
                 max_tokens=MAX_TOKENS,
                 temperature=TEMPERATURE
             )
-            
             # Extract and clean response
             content = response.choices[0].message.content
             return clean_response_content(content)
