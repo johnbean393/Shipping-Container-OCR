@@ -16,6 +16,7 @@ from datetime import datetime
 from pathlib import Path
 from typing import List, Dict, Tuple, Any
 import tempfile
+from tqdm import tqdm
 
 # Function to load expected results for a test case
 def load_expected_results(test_case: str) -> List[Dict[str, str]]:
@@ -58,7 +59,8 @@ def run_main_py(image_path: str, model: str, api_key: str, max_iterations: int =
         execution_time = time.time() - start_time
         
         if result.returncode != 0:
-            raise Exception(f"main.py failed: {result.stderr}")
+            error_msg = result.stderr if result.stderr else result.stdout
+            raise Exception(f"main.py failed: {error_msg}")
         
         # Load results
         if os.path.exists(output_file):
@@ -153,7 +155,7 @@ def test_single_case(model: str, test_case: str, api_key: str, max_iterations: i
 
 # Function to run all tests in parallel
 def run_tests_parallel(models: List[str], test_cases: List[str], api_key: str, max_iterations: int, max_workers: int = 4) -> List[Dict]:
-    """Run all tests in parallel."""
+    """Run all tests in parallel with progress bars for each model."""
     
     # Create all test combinations
     test_jobs = []
@@ -161,7 +163,16 @@ def run_tests_parallel(models: List[str], test_cases: List[str], api_key: str, m
         for test_case in test_cases:
             test_jobs.append((model, test_case))
     
-    print(f"Running {len(test_jobs)} tests in parallel (max {max_workers} workers)...")
+    # Create progress bars for each model
+    progress_bars = {}
+    for model in models:
+        progress_bars[model] = tqdm(
+            total=len(test_cases), 
+            desc=f"{model:<30}", 
+            position=models.index(model),
+            leave=True,
+            unit="test"
+        )
     
     results = []
     with ThreadPoolExecutor(max_workers=max_workers) as executor:
@@ -178,14 +189,14 @@ def run_tests_parallel(models: List[str], test_cases: List[str], api_key: str, m
                 result = future.result()
                 results.append(result)
                 
-                # Print progress
+                # Update progress bar for this model
                 if result['success']:
-                    print(f"✅ {model} on {test_case}: F1={result['metrics']['f1_score']:.3f} ({result['execution_time']:.1f}s)")
+                    progress_bars[model].set_postfix_str("✓", refresh=False)
                 else:
-                    print(f"❌ {model} on {test_case}: {result['error']}")
+                    progress_bars[model].set_postfix_str("✗", refresh=False)
+                progress_bars[model].update(1)
                     
             except Exception as e:
-                print(f"❌ {model} on {test_case}: Unexpected error: {e}")
                 results.append({
                     'model': model,
                     'test_case': test_case,
@@ -194,118 +205,58 @@ def run_tests_parallel(models: List[str], test_cases: List[str], api_key: str, m
                     'metrics': None,
                     'error': f"Unexpected error: {e}"
                 })
+                
+                # Update progress bar for this model
+                progress_bars[model].set_postfix_str("✗", refresh=False)
+                progress_bars[model].update(1)
+    
+    # Close all progress bars
+    for pbar in progress_bars.values():
+        pbar.close()
+    
+    # Add some spacing after progress bars
+    print()
     
     return results
 
-# Function to print a comprehensive summary of test results
+# Function to print a simple accuracy summary
 def print_summary(results: List[Dict], models: List[str], test_cases: List[str]):
-    """Print a comprehensive summary of test results."""
+    """Print a simple accuracy summary."""
     
-    print("Results:")
-    
-    # Overall statistics
-    total_tests = len(results)
-    successful_tests = sum(1 for r in results if r['success'])
-    failed_tests = total_tests - successful_tests
-    
-    print(f"Total tests: {total_tests}")
-    print(f"Successful: {successful_tests}")
-    print(f"Failed: {failed_tests}")
-    print(f"Success rate: {successful_tests/total_tests*100:.1f}%")
-    
-    # Per-model summary
-    print("\n" + "-"*60)
-    print("Per-model summary:")
-    print("-"*60)
+    print("Average Accuracy (correctly extracted IDs / total containers):")
     
     for model in models:
-        model_results = [r for r in results if r['model'] == model and r['success']]
-        all_model_results = [r for r in results if r['model'] == model]
+        model_results = [r for r in results if r['model'] == model]
         
         if not model_results:
-            print(f"\n{model}: No successful tests")
+            print(f"{model}: No tests completed")
             continue
-            
-        avg_f1 = sum(r['metrics']['f1_score'] for r in model_results) / len(model_results)
-        avg_precision = sum(r['metrics']['precision'] for r in model_results) / len(model_results)
-        avg_recall = sum(r['metrics']['recall'] for r in model_results) / len(model_results)
-        avg_time = sum(r['execution_time'] for r in model_results) / len(model_results)
         
-        # Calculate accuracy (percentage of perfect F1 scores)
-        perfect_results = sum(1 for r in model_results if r['metrics']['f1_score'] == 1.0)
-        accuracy = perfect_results / len(all_model_results) if all_model_results else 0
+        # Calculate accuracy across all test cases for this model
+        total_correct = 0
+        total_containers = 0
+        successful_tests = 0
         
-        print(f"\n{model}:")
-        print(f"  Overall Accuracy: {accuracy:.1%} ({perfect_results}/{len(all_model_results)} perfect)")
-        print(f"  Average F1 Score: {avg_f1:.3f}")
-        print(f"  Average Precision: {avg_precision:.3f}")
-        print(f"  Average Recall: {avg_recall:.3f}")
-        print(f"  Average Execution Time: {avg_time:.1f}s")
-        print(f"  Successful Tests: {len(model_results)}/{len(all_model_results)}")
-    
-    # Per-test-case summary
-    print("\n" + "-"*60)
-    print("PER-TEST-CASE SUMMARY")
-    print("-"*60)
-    
-    for test_case in test_cases:
-        case_results = [r for r in results if r['test_case'] == test_case and r['success']]
-        if not case_results:
-            print(f"\n{test_case}: No successful tests")
-            continue
-            
-        avg_f1 = sum(r['metrics']['f1_score'] for r in case_results) / len(case_results)
-        avg_time = sum(r['execution_time'] for r in case_results) / len(case_results)
+        for result in model_results:
+            if result['success'] and result['metrics']:
+                # Count containers that were correctly identified (true positives)
+                total_correct += result['metrics']['true_positives']
+                # Count total containers that should have been found
+                total_containers += result['metrics']['total_expected']
+                successful_tests += 1
         
-        print(f"\n{test_case}:")
-        print(f"  Average F1 Score: {avg_f1:.3f}")
-        print(f"  Average Execution Time: {avg_time:.1f}s")
-        print(f"  Successful Tests: {len(case_results)}/{len([r for r in results if r['test_case'] == test_case])}")
-    
-    # Detailed results table
-    print("\n" + "-"*80)
-    print("DETAILED RESULTS")
-    print("-"*80)
-    print(f"{'Model':<25} {'Test Case':<12} {'F1':<6} {'Prec':<6} {'Rec':<6} {'Time':<6} {'Status'}")
-    print("-"*80)
-    
-    for result in sorted(results, key=lambda x: (x['model'], x['test_case'])):
-        if result['success']:
-            metrics = result['metrics']
-            print(f"{result['model']:<25} {result['test_case']:<12} "
-                  f"{metrics['f1_score']:.3f}  {metrics['precision']:.3f}  "
-                  f"{metrics['recall']:.3f}  {result['execution_time']:5.1f}s  ✅")
+        if total_containers > 0:
+            accuracy = total_correct / total_containers
+            print(f"{model}: {accuracy:.1%} ({total_correct}/{total_containers} containers correct)")
         else:
-            print(f"{result['model']:<25} {result['test_case']:<12} "
-                  f"{'N/A':<6} {'N/A':<6} {'N/A':<6} {'N/A':<6} ❌ {result['error'][:30]}")
+            print(f"{model}: No valid test results")
     
-    # Failed tests details
-    failed_results = [r for r in results if not r['success']]
-    if failed_results:
-        print("\n" + "-"*60)
-        print("FAILED TESTS DETAILS")
-        print("-"*60)
-        for result in failed_results:
-            print(f"\n{result['model']} on {result['test_case']}:")
-            print(f"  Error: {result['error']}")
+    # Overall statistics
+    failed_tests = sum(1 for r in results if not r['success'])
+    if failed_tests > 0:
+        print(f"\nNote: {failed_tests} tests failed and were excluded from accuracy calculation")
 
-# Function to save detailed results to JSON file
-def save_detailed_results(results: List[Dict], output_file: str):
-    """Save detailed results to JSON file."""
-    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-    
-    summary_data = {
-        'timestamp': timestamp,
-        'total_tests': len(results),
-        'successful_tests': sum(1 for r in results if r['success']),
-        'results': results
-    }
-    
-    os.makedirs(os.path.dirname(output_file), exist_ok=True)
-    with open(output_file, 'w') as f:
-        json.dump(summary_data, f, indent=2)
-    
-    print(f"\nDetailed results saved to: {output_file}")
+
 
 # Main function to run the tests
 def main():
@@ -345,12 +296,6 @@ def main():
         help="Maximum number of parallel workers (default: 8)"
     )
     
-    parser.add_argument(
-        "--output",
-        default="output/test_results_{timestamp}.json",
-        help="Output file for detailed results"
-    )
-    
     args = parser.parse_args()
     
     # Parse models and test cases
@@ -382,25 +327,11 @@ def main():
             print(f"Error: Answer file not found: {answer_path}")
             sys.exit(1)
     
-    print(f"Testing {len(models)} models on {len(test_cases)} test cases")
-    print(f"Models: {', '.join(models)}")
-    print(f"Test cases: {', '.join(test_cases)}")
-    print()
-    
     # Run tests
-    start_time = time.time()
     results = run_tests_parallel(models, test_cases, api_key, args.max_iterations, args.max_workers)
-    total_time = time.time() - start_time
-    
-    print(f"\nAll tests completed in {total_time:.1f}s")
     
     # Print summary
     print_summary(results, models, test_cases)
-    
-    # Save detailed results
-    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-    output_file = args.output.format(timestamp=timestamp)
-    save_detailed_results(results, output_file)
 
 if __name__ == "__main__":
     main() 

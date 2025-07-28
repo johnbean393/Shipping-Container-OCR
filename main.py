@@ -62,7 +62,9 @@ def main():
         sys.exit(1)
     
     # Ensure output directory exists
-    os.makedirs(os.path.dirname(args.output), exist_ok=True)
+    output_dir = os.path.dirname(args.output)
+    if output_dir:  # Only create directory if path contains a directory
+        os.makedirs(output_dir, exist_ok=True)
     
     try:
         # Initialize OCR
