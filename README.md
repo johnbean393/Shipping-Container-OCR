@@ -1,10 +1,11 @@
 # Container OCR
 
-A Python script that extracts shipping container information from images using OCR technology powered by Google's Gemini 2.5 Flash model via OpenRouter API.
+A Python script that extracts shipping container information from images using OCR technology powered by AI models via OpenRouter API.
 
 ## Features
 
 - **Automated OCR**: Extract text and data from shipping container images
+- **Multiple AI Models**: Support for various vision-capable AI models through OpenRouter
 - **Structured Output**: Returns container information in structured JSON format
 - **Comprehensive Data Extraction**: Captures container IDs, carriers, dimensions, weight specifications, and more
 - **Image Validation**: Built-in image format validation and error handling
@@ -36,7 +37,7 @@ The script extracts the following information from container images:
 ## Requirements
 
 - Python 3.7+
-- OpenRouter API key (for accessing Gemini 2.5 Flash)
+- OpenRouter API key (for accessing AI vision models)
 - Required packages:
   - `openai>=1.50.0`
   - `Pillow>=10.0.0`
@@ -80,14 +81,54 @@ python container-ocr.py image.jpg --output custom_output.json --api-key your_key
 
 - `image_path`: Path to the container image file (required)
 - `--output`, `-o`: Output JSON file path (default: `container_data.json`)
+- `--model`: AI model to use for OCR (default: `google/gemini-2.5-flash`)
 - `--api-key`: OpenRouter API key (alternative to environment variable)
+
+## AI Models
+
+This application supports various AI models through the OpenRouter API. Different models have different capabilities, speeds, and costs.
+
+### Specifying Models
+
+You can specify which model to use with the `--model` parameter:
+
+```bash
+python container-ocr.py image.jpg --model google/gemini-2.5-flash
+```
+
+### Recommended Models
+
+#### **Google Gemini Models** (Recommended)
+- **`google/gemini-2.5-flash`** (Default)
+  - Excellent vision capabilities
+  - Fast processing
+  - Good cost-performance ratio
+  - Best for most container OCR tasks
+
+- **`google/gemini-2.5-pro`**
+  - Higher accuracy for complex images
+  - Better at handling poor quality images
+  - Higher cost than Flash model
+  - Best for challenging or critical extractions
+
+### Model Selection Guidelines
+
+**For General Use:**
+```bash
+python container-ocr.py image.jpg --model google/gemini-2.5-flash
+```
+
+**For High Accuracy (complex/poor quality images):**
+```bash
+python container-ocr.py image.jpg --model google/gemini-2.5-pro
+```
 
 ## Example Output
 
 ```json
 [
   {
-    "container_id": "CMCU 455 7748",
+    "container_id": "CMCU4557748",
     "carrier": "CROWLEY",
     "type": "LPG1",
     "dimensions": {
